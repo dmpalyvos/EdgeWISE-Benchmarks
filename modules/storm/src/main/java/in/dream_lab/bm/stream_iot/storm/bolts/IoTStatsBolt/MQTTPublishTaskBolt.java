@@ -4,6 +4,8 @@ package in.dream_lab.bm.stream_iot.storm.bolts.IoTStatsBolt;
 import in.dream_lab.bm.stream_iot.tasks.AbstractTask;
 import in.dream_lab.bm.stream_iot.tasks.io.MQTTPublishTask;
 import java.util.Vector;
+import metric_utils.PeriodicGraphiteReporter;
+import metric_utils.SimpleGraphiteReporter;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
@@ -35,6 +37,9 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
 	long latencyCount = 0;
 	long sumLatencyValues = 0;
 	Vector<Long> latencies = new Vector();
+  //Dimitris
+  private transient PeriodicGraphiteReporter latencyGraphiteReporter;
+  private transient String componentId;
 	// ######################################################## //
 
 
@@ -52,13 +57,19 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
 
         mqttpublishTask=new MQTTPublishTask();
         // mqttpublishTask.setup(l,p); // <-- disabled by Gabriele Mencagli
-        
+
         System.out.println("TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = " + config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 		Long builtinPeriod = (Long) config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
         reducedMetric= new ReducedMetric(new MeanReducer());
         context.registerMetric("total-latency", reducedMetric, builtinPeriod.intValue());
-        
+
         sampleRate =(int) (1 / (double) config.get(Config.TOPOLOGY_STATS_SAMPLE_RATE));
+      //Dimitris
+      this.componentId = context.getThisComponentId();
+      latencyGraphiteReporter = new PeriodicGraphiteReporter(PeriodicGraphiteReporter.LATENCY_PREFIX,
+          (long) config.get("metric.reporter.graphite.report.period.sec"),
+          new SimpleGraphiteReporter((String) config.get("metric.reporter.graphite.report.host"),
+              Math.toIntExact((long) config.get("metric.reporter.graphite.report.port"))));
     }
 
     @Override
@@ -124,11 +135,16 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
     			sumLatencyValues += latency;
     			latencyCount++;
     			latencies.addElement(new Long(latency));
+          try {
+            latencyGraphiteReporter.report(componentId, latency/1000.0);
+          } catch (Exception e) {
+            LOG.warn("Failed to report latency", e);
+          }
     			// ######################################################## //
 
     		}
     	}
-    	
+
     	sampleCount++;
     	if (sampleCount == sampleRate) {
     		sampleCount = 0;

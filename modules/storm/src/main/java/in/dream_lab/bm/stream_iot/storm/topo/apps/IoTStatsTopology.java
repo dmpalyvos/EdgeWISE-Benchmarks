@@ -69,7 +69,7 @@ public class IoTStatsTopology {
         conf.put(Config.TOPOLOGY_BACKPRESSURE_ENABLE, true);
 		conf.setDebug(false);
 		conf.setNumAckers(0);
-		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 30);
+		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 1);
 		
 		/*
 		MetricReporterConfig metricReporterConfig = new MetricReporterConfig(".*",
