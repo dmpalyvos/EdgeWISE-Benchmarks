@@ -81,7 +81,7 @@ public class IoTStatsTopology {
 		metricArg.put("InputRate", (long) inputRate);
 		metricArg.put("TotalEvents", (long) (numEvents*14.8*0.95));
 		metricArg.put("OutputPrefix", argumentClass.getOutputDirName() + "/" + argumentClass.getTopoName());
-		conf.registerMetricsConsumer(MyMetricsConsumer.class, metricArg, 1);
+		//conf.registerMetricsConsumer(MyMetricsConsumer.class, metricArg, 1);
 		
 		// conf.put("policy", "eda-random");
 		conf.put("policy", "eda-dynamic");
@@ -179,7 +179,7 @@ public class IoTStatsTopology {
         } else {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology(argumentClass.getTopoName(), conf, stormTopology);
-            Utils.sleep(100000);
+            Utils.sleep(3000000); // kill after 50 minutes
             cluster.killTopology(argumentClass.getTopoName());
             cluster.shutdown();
         }

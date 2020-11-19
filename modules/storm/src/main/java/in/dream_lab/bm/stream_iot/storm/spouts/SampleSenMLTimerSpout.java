@@ -4,14 +4,12 @@ import in.dream_lab.bm.stream_iot.storm.genevents.EventTimerGen;
 import in.dream_lab.bm.stream_iot.storm.genevents.ISyntheticEventGen;
 import in.dream_lab.bm.stream_iot.storm.genevents.logging.BatchedFileLogging;
 import in.dream_lab.bm.stream_iot.storm.genevents.utils.GlobalConstants;
-
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,8 +19,11 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEventGen {
+	private static Logger LOG = LoggerFactory.getLogger("APP");
 	SpoutOutputCollector _collector;
 	EventTimerGen eventGen;
 	BlockingQueue<List<String>> eventQueue;
@@ -42,16 +43,20 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 	Timer timer;
 	BpTime bptime;
 
+	// ############## added by Gabriele Mencagli ############## //
+	long generated = 0;
+	long start_time;
+	long last_time;
+	// ######################################################## //
+
 	public SampleSenMLTimerSpout() {
 		// this.csvFileName = "/home/ubuntu/sample100_sense.csv";
-		// System.out.println("Inside sample spout code");
 		this.csvFileName = "/home/tarun/j2ee_workspace/eventGen-anshu/eventGen/bangalore.csv";
 		this.scalingFactor = GlobalConstants.accFactor;
-		// System.out.print("the output is as follows");
 	}
 
 	public SampleSenMLTimerSpout(String csvFileName, String outSpoutCSVLogFileName, double scalingFactor,
-			String experiRunId) {
+		String experiRunId) {
 		this.csvFileName = csvFileName;
 		this.outSpoutCSVLogFileName = outSpoutCSVLogFileName;
 		this.scalingFactor = scalingFactor;
@@ -67,8 +72,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		this.inputRate = inputRate;
 	}
 
-	public SampleSenMLTimerSpout(String csvFileName, String outSpoutCSVLogFileName, double scalingFactor, int inputRate,
-			long numEvents) {
+	public SampleSenMLTimerSpout(String csvFileName, String outSpoutCSVLogFileName, double scalingFactor, int inputRate, long numEvents) {
 		this(csvFileName, outSpoutCSVLogFileName, scalingFactor, "");
 		this.inputRate = inputRate;
 		this.numEvents = numEvents;
@@ -76,8 +80,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 
 	@Override
 	public void nextTuple() {
-		List<String> entry = this.eventQueue.poll(); // nextTuple should not
-														// block!
+		List<String> entry = this.eventQueue.poll(); // nextTuple should not block!
 		if (entry == null || (this.msgId > this.startingMsgId + this.numEvents))
 			return;
 
@@ -92,18 +95,30 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		msgId++;
 		values.add(Long.toString(msgId));
 		values.add(newRow);
-		
-		if (this.msgId > (this.startingMsgId + this.numEvents / 2)
-				&& (this.msgId < (this.startingMsgId + (this.numEvents * 3) / 4))) {
+
+		// if (this.msgId > (this.startingMsgId + this.numEvents / 2) && (this.msgId < (this.startingMsgId + (this.numEvents * 3) / 4))) {
 			values.add(System.currentTimeMillis());
 			values.add(System.currentTimeMillis());
-		} else {
-			values.add(-1L);
-			values.add(-1L);
-		}
-		
+		// }
+		// else {
+		// 	values.add(-1L);
+		// 	values.add(-1L);
+		// }
+
 		values.add(System.currentTimeMillis());
 		this._collector.emit(values);
+
+		// ############## added by Gabriele Mencagli ############## //
+		generated++;
+		// set the starting time
+        if (generated == 1) {
+            start_time = System.nanoTime();
+            last_time = start_time;
+        }
+        else {
+        	last_time = System.nanoTime();
+        }
+        // ######################################################## //
 
 		// start monitoring backpressure
 		if ((this.msgId == (this.startingMsgId + this.numEvents / 2) && !bpMonitor)) {
@@ -125,7 +140,6 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 			//filename = dir + "back_pressure-" + filename;
 			String filename = outSpoutCSVLogFileName + "BackPressure";
 			writeBPTime(filename);
-
 			timer.cancel();
 		}
 
@@ -143,21 +157,30 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 	}
 
 	@Override
+	public void close() {
+		// ############## added by Gabriele Mencagli ############## //
+		double rate = generated / ((last_time - start_time) / 1e9); // per second
+		long t_elapsed = (long) ((last_time - start_time) / 1e6);  // elapsed time in milliseconds
+		LOG.info("[SOURCE] Measured source throughput: " + (int) rate + " tuples/second");
+		// ######################################################## //
+	}
+
+	@Override
 	public void open(Map map, TopologyContext context, SpoutOutputCollector collector) {
 		BatchedFileLogging.writeToTemp(this, this.outSpoutCSVLogFileName);
 		Random r = new Random();
 		try {
 			msgId = (long) (1 * Math.pow(10, 12) + (r.nextInt(1000) * Math.pow(10, 9)) + r.nextInt(10));
 			this.startingMsgId = msgId;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
 		_collector = collector;
 		this.eventGen = new EventTimerGen(this, this.scalingFactor, this.inputRate);
 		this.eventQueue = new LinkedBlockingQueue<List<String>>();
 		String uLogfilename = this.outSpoutCSVLogFileName;
-		this.eventGen.launch(this.csvFileName, uLogfilename); // Launch
-																		// threads
+		this.eventGen.launch(this.csvFileName, uLogfilename); // Launch threads
 		bptime = new BpTime();
 		// ba = new BatchedFileLogging(uLogfilename, context.getThisComponentId());
 	}
@@ -190,7 +213,8 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 	public void receive(List<String> event) {
 		try {
 			this.eventQueue.put(event);
-		} catch (InterruptedException e) {
+		}
+		catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -200,11 +224,11 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		long bpTime = 0;
 		try {
 			writer = new BufferedWriter(new FileWriter(fileName));
-
 			bpTime = bptime.bpTotalAccTime;
 			writer.write(Long.toString(bpTime));
 			writer.close();
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

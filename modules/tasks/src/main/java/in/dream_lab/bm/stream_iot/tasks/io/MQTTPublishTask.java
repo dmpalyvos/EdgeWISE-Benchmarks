@@ -129,8 +129,8 @@ public class MQTTPublishTask extends AbstractTask implements MqttCallback {
 			connOpt.setPassword(apolloPassword.toCharArray());
 
 			//if (l.isInfoEnabled())
-			//	l.info("Apollo Client {}, URL {}, Username {}, Pass {}", apolloClient, apolloURL, apolloUserName,
-			//			apolloPassword);
+			l.info("Apollo Client {}, URL {}, Username {}, Pass {}", apolloClient, apolloURL, apolloUserName,
+						apolloPassword);
 
 			// client with no persistence
 			MqttClient myClient = new MqttClient(apolloURL, apolloClient, null);

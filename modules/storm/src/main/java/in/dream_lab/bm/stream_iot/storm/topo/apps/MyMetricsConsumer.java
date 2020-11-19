@@ -57,6 +57,7 @@ public class MyMetricsConsumer implements IMetricsConsumer {
 
 	@Override
 	public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
+		System.out.println("MyMetricsConsumer riceve roba");
 		String componentId = taskInfo.srcComponentId;
 		if (componentId.startsWith("spout") ||
 				componentId.startsWith("__")) {

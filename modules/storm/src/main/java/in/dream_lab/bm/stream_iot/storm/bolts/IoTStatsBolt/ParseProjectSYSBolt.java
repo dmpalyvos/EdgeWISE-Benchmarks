@@ -102,7 +102,7 @@ public class ParseProjectSYSBolt extends BaseRichBolt {
 
 	@Override
 	public void cleanup() {
-		xmlParse.tearDown();
+		//xmlParse.tearDown();
 	}
 
 	@Override

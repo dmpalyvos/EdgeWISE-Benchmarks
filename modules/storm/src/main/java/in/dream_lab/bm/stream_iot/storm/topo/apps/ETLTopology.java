@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -17,12 +16,9 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-
-
 import com.github.staslev.storm.metrics.MetricReporter;
 import com.github.staslev.storm.metrics.MetricReporterConfig;
 import com.github.staslev.storm.metrics.yammer.SimpleStormMetricProcessor;
-
 import in.dream_lab.bm.stream_iot.storm.bolts.ETL.TAXI.AnnotationBolt;
 import in.dream_lab.bm.stream_iot.storm.bolts.ETL.TAXI.AzureTableInsertBolt;
 import in.dream_lab.bm.stream_iot.storm.bolts.ETL.TAXI.BloomFilterCheckBolt;
@@ -46,49 +42,39 @@ public class ETLTopology {
 			System.out.println("ERROR! INVALID NUMBER OF ARGUMENTS");
 			return;
 		}
-
 		String resourceDir = System.getenv("RIOT_RESOURCES");
 		String inputPath = System.getenv("RIOT_INPUT_PROP_PATH");
-
 		System.out.println("RESOURCE DIR: " + resourceDir);
-		
-		String logFilePrefix = argumentClass.getTopoName() + "-" + argumentClass.getExperiRunId() + "-"
-				+ argumentClass.getScalingFactor() + ".log";
+		String logFilePrefix = argumentClass.getTopoName() + "-" + argumentClass.getExperiRunId() + "-" + argumentClass.getScalingFactor() + ".log";
 		String sinkLogFileName = argumentClass.getOutputDirName() + "/sink-" + logFilePrefix;
 		// String spoutLogFileName = argumentClass.getOutputDirName() + "/spout-" + logFilePrefix;
-		
 		String spoutLogFileName = argumentClass.getOutputDirName() + "/" + argumentClass.getTopoName();
-		
 		String taskPropFilename = inputPath + "/" + argumentClass.getTasksPropertiesFilename();
 		int inputRate = argumentClass.getInputRate();
 		long numEvents = argumentClass.getNumEvents();
 		int numWorkers = argumentClass.getNumWorkers();
-
 		List<Integer> boltInstances = argumentClass.getBoltInstances();
 		if (boltInstances != null) {
 			if ((boltInstances.size() != 9)) {
 				System.out.println("Invalid Number of bolt instances provided. Exiting");
 				System.exit(-1);
 			}
-		} else {
+		}
+		else {
 			// boltInstances = new ArrayList<Integer>(Arrays.asList(1,1,1,1,1,1,1,1,1));
 			// boltInstances = new ArrayList<Integer>(Arrays.asList(4,4,4,4,4,4,4,4,4));
 			boltInstances = new ArrayList<Integer>(Arrays.asList(1,1,1,1,1,1,1,1,2));
 			// boltInstances = new ArrayList<Integer>(Arrays.asList(2,1,1,1,1,1,1,1,2));
 		}
-		
 		List<String> resourceFileProps = RiotResourceFileProps.getRiotResourceFileProps();
-
-		
 		Config conf = new Config();
 		conf.put(Config.TOPOLOGY_BACKPRESSURE_ENABLE, true);
 		conf.setDebug(false);
 		conf.setNumAckers(0);
 		conf.setNumWorkers(numWorkers);
-		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 30);
-		
+		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 1); //FIXME: Dimitris, changed temporarily
+
 		//SimpleStormMetricProcessor processor;
-		
 		//Map config = new HashMap();
 		//config.put(Config.TOPOLOGY_NAME, "ETLTopology");
 		//processor = new SimpleStormMetricProcessor(config);
@@ -101,45 +87,39 @@ public class ETLTopology {
 		
 		conf.registerMetricsConsumer(MetricReporter.class, metricReporterConfig, 1);
 		*/
-		
+
 		Map<String, Object> metricArg = new HashMap<String, Object>();
 		metricArg.put("InputRate", (long) inputRate);
 		metricArg.put("TotalEvents", (long) (numEvents*1.95));
 		metricArg.put("OutputPrefix", argumentClass.getOutputDirName() + "/" + argumentClass.getTopoName());
-		conf.registerMetricsConsumer(MyMetricsConsumer.class, metricArg, 1);
-		
+		//conf.registerMetricsConsumer(MyMetricsConsumer.class, metricArg, 1);
+
 		// conf.put("policy", "eda-random");
 		conf.put("policy", "eda-dynamic");
-		// conf.put("policy", "eda-static");
-		// conf.put("static-bolt-ids", "SenMlParseBolt,RangeFilterBolt,BloomFilterBolt,InterpolationBolt,JoinBolt,AnnotationBolt,AzureInsert,CsvToSenMLBolt,PublishBolt,sink");
-		// conf.put("static-bolt-weights", "31,15,15,25,17,9,8,19,14,22");
-		// conf.put("static-bolt-weights", "12,17,16,33,16,8,8,23,14,27");
-		
+		//conf.put("policy", "eda-static");
+		//conf.put("static-bolt-ids", "SenMlParseBolt,RangeFilterBolt,BloomFilterBolt,InterpolationBolt,JoinBolt,AnnotationBolt,AzureInsert,CsvToSenMLBolt,PublishBolt,sink");
+		//conf.put("static-bolt-weights", "31,15,15,25,17,9,8,19,14,22");
+		//conf.put("static-bolt-weights", "12,17,16,33,16,8,8,23,14,27");
 		//conf.put("policy", "eda-chain");
 		//conf.put("chain-bolt-ids", "SenMlParseBolt,RangeFilterBolt,BloomFilterBolt,InterpolationBolt,JoinBolt,AnnotationBolt,AzureInsert_Sink,CsvToSenMLBolt,PublishBolt_Sink");
-		//conf.put("chain-bolt-prios", "3,3,3,3,3,3,2,1,1");
-				
+		//conf.put("chain-bolt-prios", "3,3,3,3,3,3,2,1,1");	
 		//conf.put("policy", "eda-min-lat");
 		//conf.put("min-lat-bolt-ids", "SenMlParseBolt,RangeFilterBolt,BloomFilterBolt,InterpolationBolt,JoinBolt,AnnotationBolt,AzureInsert_Sink,CsvToSenMLBolt,PublishBolt_Sink");
 		//conf.put("min-lat-bolt-prios", "1,2,3,4,5,6,9,7,8");
-		
 		// conf.put("consume", "all");
 		// conf.put("consume", "half");
 		conf.put("consume", "constant");
 		conf.put("constant", 50);
-		
 		conf.put("get_wait_time", true);
 		conf.put("get_empty_time", true);
 		conf.put("info_path", argumentClass.getOutputDirName());
 		conf.put("get_queue_time", true);
 		conf.put("queue_time_sample_freq", inputRate * 3);
-		
+
 		Properties p_ = new Properties();
 		InputStream input = new FileInputStream(taskPropFilename);
 		p_.load(input);
-
 		Enumeration e = p_.propertyNames();
-
 		while (e.hasMoreElements()) {
 			String key = (String) e.nextElement();
 			if (resourceFileProps.contains(key)) {
@@ -150,10 +130,7 @@ public class ETLTopology {
 		}
 
 		TopologyBuilder builder = new TopologyBuilder();
-
 		String spout1InputFilePath = resourceDir + "/SYS_sample_data_senml.csv";
-
-		System.out.println(spout1InputFilePath);
 
 		builder.setSpout("spout", new SampleSenMLTimerSpout(spout1InputFilePath, spoutLogFileName,
 				argumentClass.getScalingFactor(), inputRate, numEvents), 1);
@@ -164,19 +141,19 @@ public class ETLTopology {
 //				new Fields("OBSTYPE"));
 
 		builder.setBolt("RangeFilterBolt", new RangeFilterBolt(p_), boltInstances.get(1)).shuffleGrouping("SenMlParseBolt");
-		
+
 //		builder.setBolt("BloomFilterBolt", new BloomFilterCheckBolt(p_), boltInstances.get(2)).fieldsGrouping("RangeFilterBolt",
 //				new Fields("OBSTYPE"));
 
 		builder.setBolt("BloomFilterBolt", new BloomFilterCheckBolt(p_), boltInstances.get(2)).shuffleGrouping("RangeFilterBolt");
-		
+
 //		builder.setBolt("InterpolationBolt", new InterpolationBolt(p_), boltInstances.get(3)).fieldsGrouping("BloomFilterBolt",
 //				new Fields("OBSTYPE"));
-		
+
 		builder.setBolt("InterpolationBolt", new InterpolationBolt(p_), boltInstances.get(3)).shuffleGrouping("BloomFilterBolt");
-		
+
 		builder.setBolt("JoinBolt", new JoinBolt(p_), boltInstances.get(4)).fieldsGrouping("InterpolationBolt", new Fields("MSGID"));
-		
+
 //		builder.setBolt("JoinBolt", new JoinBolt(p_), boltInstances.get(4)).shuffleGrouping("InterpolationBolt");
 
 		builder.setBolt("AnnotationBolt", new AnnotationBolt(p_), boltInstances.get(5)).shuffleGrouping("JoinBolt");
@@ -198,17 +175,14 @@ public class ETLTopology {
 		StormTopology stormTopology = builder.createTopology();
 
 		if (argumentClass.getDeploymentMode().equals("C")) {
-			System.out.println("Spout Log File: " + spoutLogFileName);
-			System.out.println("Sink Log File: " + sinkLogFileName);
 			StormSubmitter.submitTopology(argumentClass.getTopoName(), conf, stormTopology);
-		} else {
+		}
+		else {
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology(argumentClass.getTopoName(), conf, stormTopology);
-			Utils.sleep(1800000);
+			Utils.sleep(3000000); // kill after 50 minutes
 			cluster.killTopology(argumentClass.getTopoName());
 			cluster.shutdown();
-			System.out.println("Input Rate: " + metric_utils.Utils.getInputRate(spoutLogFileName));
-			System.out.println("Throughput: " + metric_utils.Utils.getThroughput(sinkLogFileName));
 		}
 	}
 }
