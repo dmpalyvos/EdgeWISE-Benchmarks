@@ -1,12 +1,13 @@
 package in.dream_lab.bm.stream_iot.storm.bolts.ETL.TAXI;
 
 import in.dream_lab.bm.stream_iot.tasks.AbstractTask;
-import in.dream_lab.bm.stream_iot.tasks.annotate.Annotate;
 import in.dream_lab.bm.stream_iot.tasks.io.MQTTPublishTask;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.Properties;
+import metric_utils.PeriodicGraphiteReporter;
+import metric_utils.SimpleGraphiteReporter;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
@@ -14,9 +15,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.*;
@@ -24,6 +23,7 @@ import java.io.*;
 public class MQTTPublishBolt extends BaseRichBolt {
 	private static Logger LOG = LoggerFactory.getLogger("APP");
 	private transient ReducedMetric reducedMetric;
+	private transient PeriodicGraphiteReporter latencyGraphiteReporter;
 	private int sampleCount = 0;
 	private int sampleRate;
     private Properties p;
@@ -35,6 +35,7 @@ public class MQTTPublishBolt extends BaseRichBolt {
 	long latencyCount = 0;
 	long sumLatencyValues = 0;
 	Vector<Long> latencies = new Vector();
+	private transient String componentId;
 	// ######################################################## //
 
     public MQTTPublishBolt(Properties p_) {
@@ -42,9 +43,9 @@ public class MQTTPublishBolt extends BaseRichBolt {
     }
 
     OutputCollector collector;
-    private static Logger l; 
+    private static Logger l;
     public static void initLogger(Logger l_) { l = l_; }
-    MQTTPublishTask mqttPublishTask; 
+    MQTTPublishTask mqttPublishTask;
 
     @Override
     public void prepare(Map config, TopologyContext context, OutputCollector outputCollector) {
@@ -54,11 +55,16 @@ public class MQTTPublishBolt extends BaseRichBolt {
 
         // mqttPublishTask.setup(l,p); // <-- disabled by Gabriele Mencagli
 
+				this.componentId = context.getThisComponentId();
         System.out.println("TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = " + config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 		Long builtinPeriod = (Long) config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
         reducedMetric = new ReducedMetric(new MeanReducer());
         context.registerMetric("total-latency", reducedMetric, builtinPeriod.intValue());
         sampleRate = (int) (1 / (double) config.get(Config.TOPOLOGY_STATS_SAMPLE_RATE));
+        latencyGraphiteReporter = new PeriodicGraphiteReporter(PeriodicGraphiteReporter.LATENCY_PREFIX,
+						(long) config.get("metric.reporter.graphite.report.period.sec"),
+            new SimpleGraphiteReporter((String) config.get("metric.reporter.graphite.report.host"),
+								Math.toIntExact((long) config.get("metric.reporter.graphite.report.port"))));
     }
 
     @Override
@@ -111,7 +117,12 @@ public class MQTTPublishBolt extends BaseRichBolt {
 
     			// ############## added by Gabriele Mencagli ############## //
     			long latency = System.currentTimeMillis() - spoutTimestamp.longValue();
-    			sumLatencyValues += latency;
+					try {
+						latencyGraphiteReporter.report(componentId, latency/1000.0);
+					} catch (Exception e) {
+						LOG.warn("Failed to report latency", e);
+					}
+					sumLatencyValues += latency;
     			latencyCount++;
     			latencies.addElement(new Long(latency));
     			// ######################################################## //
