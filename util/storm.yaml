@@ -1,0 +1,16 @@
+# Put the following at the end of storm.yaml
+# Graphite Metric Consumer
+# Get JAR from here: https://mvnrepository.com/artifact/com.github.staslev/storm-metrics-reporter/1.5.0
+# and place in storm's lib directory
+topology.metrics.consumer.register:
+  - class: "com.github.staslev.storm.metrics.MetricReporter"
+    argument:
+      - "(.*.*)"
+      - "com.github.staslev.storm.metrics.yammer.SimpleGraphiteStormMetricProcessor"
+    parallelism.hint: 1
+
+
+metric.reporter.graphite.report.period.sec: 1
+topology.builtin.metrics.bucket.size.secs: 1
+metric.reporter.graphite.report.host: "129.16.20.158"
+metric.reporter.graphite.report.port: 2003

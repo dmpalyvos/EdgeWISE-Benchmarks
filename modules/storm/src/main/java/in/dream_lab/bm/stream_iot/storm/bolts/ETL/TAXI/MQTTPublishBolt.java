@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.Properties;
-import metric_utils.PeriodicGraphiteReporter;
-import metric_utils.SimpleGraphiteReporter;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
@@ -34,9 +32,6 @@ public class MQTTPublishBolt extends BaseRichBolt {
 	long latencyCount = 0;
 	long sumLatencyValues = 0;
 	Vector<Long> latencies = new Vector();
-	//Dimitris
-	private transient PeriodicGraphiteReporter latencyGraphiteReporter;
-	private transient String componentId;
 	// ######################################################## //
 
     public MQTTPublishBolt(Properties p_) {
@@ -61,12 +56,6 @@ public class MQTTPublishBolt extends BaseRichBolt {
         reducedMetric = new ReducedMetric(new MeanReducer());
         context.registerMetric("total-latency", reducedMetric, builtinPeriod.intValue());
         sampleRate = (int) (1 / (double) config.get(Config.TOPOLOGY_STATS_SAMPLE_RATE));
-        //Dimitris
-			this.componentId = context.getThisComponentId();
-			latencyGraphiteReporter = new PeriodicGraphiteReporter(PeriodicGraphiteReporter.LATENCY_PREFIX,
-						(long) config.get("metric.reporter.graphite.report.period.sec"),
-            new SimpleGraphiteReporter((String) config.get("metric.reporter.graphite.report.host"),
-								Math.toIntExact((long) config.get("metric.reporter.graphite.report.port"))));
     }
 
     @Override
@@ -122,11 +111,6 @@ public class MQTTPublishBolt extends BaseRichBolt {
 					sumLatencyValues += latency;
     			latencyCount++;
     			latencies.addElement(new Long(latency));
-					try {
-						latencyGraphiteReporter.report(componentId, latency/1000.0);
-					} catch (Exception e) {
-						LOG.warn("Failed to report latency", e);
-					}
     			// ######################################################## //
     		}
     	}
