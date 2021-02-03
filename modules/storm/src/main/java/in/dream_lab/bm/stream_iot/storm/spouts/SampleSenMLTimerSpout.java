@@ -21,6 +21,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.storm.Config;
 
 public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEventGen {
 	private static Logger LOG = LoggerFactory.getLogger("APP");
@@ -95,6 +96,8 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		msgId++;
 		values.add(Long.toString(msgId));
 		values.add(newRow);
+
+		//LOG.info("[SOURCE] source sent tuple");
 
 		// if (this.msgId > (this.startingMsgId + this.numEvents / 2) && (this.msgId < (this.startingMsgId + (this.numEvents * 3) / 4))) {
 			values.add(System.currentTimeMillis());
@@ -177,12 +180,14 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 			e.printStackTrace();
 		}
 		_collector = collector;
-		this.eventGen = new EventTimerGen(this, this.scalingFactor, this.inputRate);
+		this.eventGen = new EventTimerGen(this, this.scalingFactor, this.inputRate, map, context);
 		this.eventQueue = new LinkedBlockingQueue<List<String>>();
 		String uLogfilename = this.outSpoutCSVLogFileName;
 		this.eventGen.launch(this.csvFileName, uLogfilename); // Launch threads
 		bptime = new BpTime();
 		// ba = new BatchedFileLogging(uLogfilename, context.getThisComponentId());
+        Long builtinPeriod = (Long) map.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
+        context.registerMetric("external-queue-size", () -> eventQueue.size(), builtinPeriod.intValue());		
 	}
 
 	@Override

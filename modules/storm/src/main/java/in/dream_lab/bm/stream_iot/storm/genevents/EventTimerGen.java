@@ -8,7 +8,8 @@ import in.dream_lab.bm.stream_iot.storm.genevents.factory.CsvSplitter;
 import in.dream_lab.bm.stream_iot.storm.genevents.factory.TableClass;
 import in.dream_lab.bm.stream_iot.storm.genevents.factory.JsonSplitter;
 import in.dream_lab.bm.stream_iot.storm.genevents.utils.GlobalConstants;
-
+import org.apache.storm.task.TopologyContext;
+import java.util.Map;
 import java.io.IOException;
 import java.util.List;
 import java.util.Timer;
@@ -17,8 +18,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
-
 import com.esotericsoftware.minlog.Log;
+import org.apache.storm.metric.api.MeanReducer;
+import org.apache.storm.metric.api.ReducedMetric;
+import org.apache.storm.Config;
 
 public class EventTimerGen {
 	private final ISyntheticEventGen iseg;
@@ -27,12 +30,17 @@ public class EventTimerGen {
 	
 	private final int period = 100;
 	private final int batchSize;
+	private transient ReducedMetric reducedMetric;
+    private TopologyContext context;
+    private Map map;
 
-	public EventTimerGen(ISyntheticEventGen iseg, double scalingFactor, int rate) {
+	public EventTimerGen(ISyntheticEventGen iseg, double scalingFactor, int rate, Map _map, TopologyContext _context) {
 		this.iseg = iseg;
 		this.scalingFactor = scalingFactor;
 		this.rate = rate;
 		this.batchSize = this.rate / (1000 / period);
+		this.map = _map;
+		this.context = _context;
 	}
 
 	public static List<String> getHeadersFromCSV(String csvFileName) {
@@ -62,7 +70,7 @@ public class EventTimerGen {
 			
 			for (int i = 0; i < numThreads; i++) {
 				Timer timer = new Timer("EvenGen", true);
-				TimerTask task = new EvenGenTimerTask(nestedList.get(i));
+				TimerTask task = new EvenGenTimerTask(nestedList.get(i), map, context);
 				timer.scheduleAtFixedRate(task, 0, period);
 			}
 
@@ -75,14 +83,34 @@ public class EventTimerGen {
 		private final List<List<String>> rows;
 		private final int rowLen;
 		private int rowIndex = 0;
-		
-		EvenGenTimerTask (TableClass eventList) {
+	    private TopologyContext context;
+	    private Map map;
+	    private long generated;
+	    private long lastSample;
+
+		EvenGenTimerTask (TableClass eventList, Map _map, TopologyContext _context) {
 			rows = eventList.getRows();
 			rowLen = rows.size();
+			this.map = _map;
+			this.context = _context;
+			reducedMetric = new ReducedMetric(new MeanReducer());
+	        Long builtinPeriod = (Long) map.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
+	        context.registerMetric("external-rate", reducedMetric, builtinPeriod.intValue());
+	        generated = 0;
 		}
 		
 		@Override
 		public void run() {
+			if (generated == 0) {
+				lastSample = System.nanoTime();
+			}
+			long elapsed = System.nanoTime() - lastSample;
+			if (elapsed >= 1e9) {
+				double rate = generated / ((elapsed) / 1e9); // per second
+				reducedMetric.update((int) rate);
+				generated = 0;
+				lastSample = System.nanoTime();
+			}
 			for (int i = 0; i < batchSize; i++) {
 				if (rowIndex == rowLen) {
 					rowIndex = 0;
@@ -90,6 +118,7 @@ public class EventTimerGen {
 				List<String> event = rows.get(rowIndex);
 				iseg.receive(event);
 				rowIndex++;
+				generated++;
 			}
 		}
 	}

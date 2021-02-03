@@ -142,8 +142,8 @@ topo_qualified_path = {
 			"train_h" : "in.dream_lab.bm.stream_iot.storm.topo.apps.IoTTrainTopologySYS"
 			}
 			
-paths={'buzz':'/home/fuxinwei/EdgeWiseATC19/EdgeWise-ATC-19-Benchmarks/scripts'}
-results_dir={'buzz':'/home/fuxinwei/EdgeWiseATC19/EdgeWise-ATC-19-Benchmarks/scripts/experiment_results'}
+paths={'buzz':'/home/mencagli/EdgeWISE-Benchmarks/scripts'}
+results_dir={'buzz':'/home/mencagli/EdgeWISE-Benchmarks/scripts'}
 
 pi_outdir = "/home/pi/topo_run_outdir/reg-SYS"
 

@@ -66,7 +66,7 @@ public class MQTTPublishBolt extends BaseRichBolt {
     	String obsVal = (String)input.getValueByField("OBSVAL");
     	HashMap<String, String> map = new HashMap();
         map.put(AbstractTask.DEFAULT_KEY, obsVal);
-
+        //LOG.info("[SINK] sink received");
         // ############## added by Gabriele Mencagli ############## //
         received++;
 		// set the starting time

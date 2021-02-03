@@ -164,7 +164,7 @@ public class SampleTimerSpoutForTrain extends BaseRichSpout implements ISyntheti
 		}
 
 		_collector = collector;
-		this.eventGen = new EventTimerGen(this, this.scalingFactor, this.inputRate);
+		this.eventGen = new EventTimerGen(this, this.scalingFactor, this.inputRate, map, context);
 		this.eventQueue = new LinkedBlockingQueue<List<String>>();
 		String uLogfilename = this.outSpoutCSVLogFileName;
 		this.eventGen.launch(this.csvFileName, uLogfilename); // Launch threads
