@@ -19,6 +19,7 @@ public class ArgumentClass{
     long numEvents;
     List<Integer> boltInstances;
     int numWorkers;
+    int bucket_time;
 
     public String getTasksName() {
 		return tasksName;
@@ -92,6 +93,13 @@ public class ArgumentClass{
         this.numEvents = numEvents;
     }
 
+    public long getBucketTime() {
+        return bucket_time;
+    }
+
+    public void setBucketTime(int _bucket_time) {
+        this.bucket_time = _bucket_time;
+    }
 
     public String getTasksPropertiesFilename() {
         return tasksPropertiesFilename;

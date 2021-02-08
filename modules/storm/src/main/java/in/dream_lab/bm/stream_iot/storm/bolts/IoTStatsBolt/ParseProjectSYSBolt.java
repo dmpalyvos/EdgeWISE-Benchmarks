@@ -93,7 +93,7 @@ public class ParseProjectSYSBolt extends BaseRichBolt {
 				}
 				
 				value.add(input.getLongByField("CHAINSTAMP"));
-				
+				value.add(input.getValueByField("TIMESTAMP_EXT"));
 				collector.emit(value);
 			}
 
@@ -108,7 +108,7 @@ public class ParseProjectSYSBolt extends BaseRichBolt {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
 		// outputFieldsDeclarer.declare(new Fields("RowString","MSGID","Res"));
-		outputFieldsDeclarer.declare(new Fields("sensorMeta", "sensorID", "obsType", "obsVal", "MSGID", "TIMESTAMP", "SPOUTTIMESTAMP", "CHAINSTAMP")); // obsType
+		outputFieldsDeclarer.declare(new Fields("sensorMeta", "sensorID", "obsType", "obsVal", "MSGID", "TIMESTAMP", "SPOUTTIMESTAMP", "CHAINSTAMP", "TIMESTAMP_EXT")); // obsType
 																											// =
 																											// {temp,
 																											// humid,

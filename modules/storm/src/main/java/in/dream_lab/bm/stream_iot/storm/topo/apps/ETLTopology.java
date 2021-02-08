@@ -72,7 +72,7 @@ public class ETLTopology {
 		conf.setDebug(false);
 		conf.setNumAckers(0);
 		conf.setNumWorkers(numWorkers);
-		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 30); //FIXME: Dimitris, changed temporarily
+		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, argumentClass.getBucketTime()); //FIXME: Dimitris, changed temporarily
 
 		//SimpleStormMetricProcessor processor;
 		//Map config = new HashMap();
@@ -180,7 +180,8 @@ public class ETLTopology {
 		else {
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology(argumentClass.getTopoName(), conf, stormTopology);
-			Utils.sleep(600000); // kill after 50 minutes
+			long run_time_sec = argumentClass.getNumEvents() / argumentClass.getInputRate();
+			Utils.sleep(run_time_sec * 1000);
 			cluster.killTopology(argumentClass.getTopoName());
 			cluster.shutdown();
 		}

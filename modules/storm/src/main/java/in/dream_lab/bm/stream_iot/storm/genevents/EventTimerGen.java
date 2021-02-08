@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -115,7 +116,10 @@ public class EventTimerGen {
 				if (rowIndex == rowLen) {
 					rowIndex = 0;
 				}
-				List<String> event = rows.get(rowIndex);
+				List<String> event = new ArrayList<String>();
+				event.addAll(rows.get(rowIndex));
+				Long timestamp_ext = new Long(System.currentTimeMillis());
+				event.add(Long.toString(timestamp_ext));
 				iseg.receive(event);
 				rowIndex++;
 				generated++;

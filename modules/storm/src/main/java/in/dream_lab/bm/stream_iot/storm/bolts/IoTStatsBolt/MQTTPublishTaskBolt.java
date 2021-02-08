@@ -22,6 +22,7 @@ import java.util.Properties;
 public class MQTTPublishTaskBolt extends BaseRichBolt {
 	private static Logger LOG = LoggerFactory.getLogger("APP");
 	private transient ReducedMetric reducedMetric;
+	private transient ReducedMetric reducedMetricExt;
 	private int sampleCount = 0;
 	private int sampleRate;
     private Properties p;
@@ -54,8 +55,9 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
         System.out.println("TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = " + config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 		Long builtinPeriod = (Long) config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
         reducedMetric= new ReducedMetric(new MeanReducer());
+        reducedMetricExt = new ReducedMetric(new MeanReducer());
         context.registerMetric("total-latency", reducedMetric, builtinPeriod.intValue());
-
+		context.registerMetric("total-latency-ext", reducedMetricExt, builtinPeriod.intValue());
         sampleRate =(int) (1 / (double) config.get(Config.TOPOLOGY_STATS_SAMPLE_RATE));
     }
 
@@ -114,9 +116,10 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
         */
         if (sampleCount == 0) {
     		Long spoutTimestamp = input.getLongByField("SPOUTTIMESTAMP");
+    		long timestamp_ext = (long) input.getValueByField("TIMESTAMP_EXT");
     		if (spoutTimestamp > 0) {
     			reducedMetric.update(System.currentTimeMillis() - spoutTimestamp);
-
+    			reducedMetricExt.update(System.currentTimeMillis() - timestamp_ext);
     			// ############## added by Gabriele Mencagli ############## //
     			long latency = System.currentTimeMillis() - spoutTimestamp.longValue();
     			sumLatencyValues += latency;

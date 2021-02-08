@@ -73,6 +73,7 @@ public class AnnotationBolt extends BaseRichBolt {
     		}
 			
     		values.add(input.getLongByField("CHAINSTAMP"));
+    		values.add(input.getValueByField("TIMESTAMP_EXT"));
 			collector.emit(values);
     	} else {
     		//System.out.println(this.getClass().getName() + " - UPDATED VALUE = NULL - " + obsVal);
@@ -86,7 +87,7 @@ public class AnnotationBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("MSGID", "META", "OBSTYPE", "OBSVAL", "TIMESTAMP", "SPOUTTIMESTAMP", "CHAINSTAMP"));
+        outputFieldsDeclarer.declare(new Fields("MSGID", "META", "OBSTYPE", "OBSVAL", "TIMESTAMP", "SPOUTTIMESTAMP", "CHAINSTAMP", "TIMESTAMP_EXT"));
     }
 
 }

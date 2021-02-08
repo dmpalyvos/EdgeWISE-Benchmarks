@@ -87,12 +87,17 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 
 		Values values = new Values();
 		StringBuilder rowStringBuf = new StringBuilder();
+
+		long timestamp_ext = Long.parseLong(entry.get(entry.size() - 1), 10);
+		entry.remove(entry.size() - 1);
+
 		for (String s : entry) {
 			rowStringBuf.append(",").append(s);
 		}
 
 		String rowString = rowStringBuf.toString().substring(1);
 		String newRow = rowString.substring(rowString.indexOf(",") + 1);
+		//LOG.info("Source genera: " + newRow);
 		msgId++;
 		values.add(Long.toString(msgId));
 		values.add(newRow);
@@ -109,6 +114,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		// }
 
 		values.add(System.currentTimeMillis());
+		values.add(timestamp_ext);
 		this._collector.emit(values);
 
 		// ############## added by Gabriele Mencagli ############## //
@@ -211,7 +217,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("MSGID", "PAYLOAD", "TIMESTAMP", "SPOUTTIMESTAMP", "CHAINSTAMP"));
+		declarer.declare(new Fields("MSGID", "PAYLOAD", "TIMESTAMP", "SPOUTTIMESTAMP", "CHAINSTAMP", "TIMESTAMP_EXT"));
 	}
 
 	@Override

@@ -69,7 +69,7 @@ public class IoTStatsTopology {
         conf.put(Config.TOPOLOGY_BACKPRESSURE_ENABLE, true);
 		conf.setDebug(false);
 		conf.setNumAckers(0);
-		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 1);
+		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, argumentClass.getBucketTime());
 		
 		/*
 		MetricReporterConfig metricReporterConfig = new MetricReporterConfig(".*",
@@ -179,7 +179,8 @@ public class IoTStatsTopology {
         } else {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology(argumentClass.getTopoName(), conf, stormTopology);
-            Utils.sleep(3000000); // kill after 50 minutes
+			long run_time_sec = argumentClass.getNumEvents() / argumentClass.getInputRate();
+			Utils.sleep(run_time_sec * 1000);
             cluster.killTopology(argumentClass.getTopoName());
             cluster.shutdown();
         }

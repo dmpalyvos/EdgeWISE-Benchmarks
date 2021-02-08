@@ -14,7 +14,7 @@ public class ArgumentParser {
      */
     public static ArgumentClass parserCLI(String [] args)
     {
-    	if(args == null || !(args.length == 11 || args.length == 12)){
+    	if(args == null || !(args.length == 12 || args.length == 13)){
             System.out.println("invalid number of arguments");
             return null;
         }
@@ -31,8 +31,9 @@ public class ArgumentParser {
             argumentClass.setInputRate(Integer.parseInt(args[8]));
             argumentClass.setNumEvents(Long.parseLong(args[9]));
             argumentClass.setNumWorkers(Integer.parseInt(args[10]));
-            if (args.length == 12)
-            	argumentClass.setBoltInstances(args[11]);
+            argumentClass.setBucketTime(Integer.parseInt(args[11]));
+            if (args.length == 13)
+            	argumentClass.setBoltInstances(args[12]);
             return argumentClass;
         }
     }
