@@ -14,7 +14,8 @@ public class ArgumentParser {
      */
     public static ArgumentClass parserCLI(String [] args)
     {
-    	if(args == null || !(args.length == 12 || args.length == 13)){
+
+    	if(args == null || !(args.length == 13 || args.length == 14)){
             System.out.println("invalid number of arguments");
             return null;
         }
@@ -28,12 +29,18 @@ public class ArgumentParser {
             argumentClass.setOutputDirName(args[5]);
             argumentClass.setTasksPropertiesFilename(args[6]);
             argumentClass.setTasksName(args[7]);
-            argumentClass.setInputRate(Integer.parseInt(args[8]));
-            argumentClass.setNumEvents(Long.parseLong(args[9]));
-            argumentClass.setNumWorkers(Integer.parseInt(args[10]));
-            argumentClass.setBucketTime(Integer.parseInt(args[11]));
-            if (args.length == 13)
-            	argumentClass.setBoltInstances(args[12]);
+            argumentClass.setNumEvents(Long.parseLong(args[8]));
+            argumentClass.setNumWorkers(Integer.parseInt(args[9]));
+            argumentClass.setBucketTime(Integer.parseInt(args[10]));
+            if (args.length == 14) {
+                argumentClass.setBoltInstances(args[11]);
+            }
+            // Command must always end with --rate <rate_value>
+            if (!"--rate".equals(args[args.length-2])) {
+                System.out.println("Invalid CLI arguments: Last argument should be --rate <rate_value>");
+                return null;
+            }
+            argumentClass.setInputRate(Integer.valueOf(args.length-1));
             return argumentClass;
         }
     }

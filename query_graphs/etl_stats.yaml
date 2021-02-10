@@ -1,0 +1,56 @@
+spout:
+  - SenMlParseBolt
+
+SenMlParseBolt:
+  - RangeFilterBolt
+
+RangeFilterBolt:
+  - BloomFilterBolt
+
+BloomFilterBolt:
+  - InterpolationBolt
+
+InterpolationBolt:
+  - JoinBolt
+
+JoinBolt:
+  - AnnotationBolt
+
+AnnotationBolt:
+  - AzureInsert_Sink
+  - CsvToSenMLBolt
+
+AzureInsert_Sink:
+
+CsvToSenMLBolt:
+ - PublishBolt_Sink
+
+PublishBolt_Sink:
+
+
+spout:
+  - ParseProjectSYSBolt
+
+ParseProjectSYSBolt:
+  - BloomFilterCheckBolt
+
+BloomFilterCheckBolt:
+  - KalmanFilterBolt
+  - SecondOrderMomentBolt
+  - DistinctApproxCountBolt
+
+KalmanFilterBolt:
+  - SimpleLinearRegressionPredictorBolt
+
+SecondOrderMomentBolt:
+  - MQTTPublishTaskBolt_Sink
+
+DistinctApproxCountBolt:
+  - MQTTPublishTaskBolt_Sink
+
+SimpleLinearRegressionPredictorBolt:
+  - MQTTPublishTaskBolt_Sink
+
+MQTTPublishTaskBolt_Sink:
+
+

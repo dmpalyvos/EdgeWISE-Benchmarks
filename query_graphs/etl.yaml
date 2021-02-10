@@ -1,0 +1,30 @@
+spout:
+  - SenMlParseBolt
+
+SenMlParseBolt:
+  - RangeFilterBolt
+
+RangeFilterBolt:
+  - BloomFilterBolt
+
+BloomFilterBolt:
+  - InterpolationBolt
+
+InterpolationBolt:
+  - JoinBolt
+
+JoinBolt:
+  - AnnotationBolt
+
+AnnotationBolt:
+  - AzureInsert_Sink
+  - CsvToSenMLBolt
+
+AzureInsert_Sink:
+
+CsvToSenMLBolt:
+ - PublishBolt_Sink
+
+PublishBolt_Sink:
+
+
