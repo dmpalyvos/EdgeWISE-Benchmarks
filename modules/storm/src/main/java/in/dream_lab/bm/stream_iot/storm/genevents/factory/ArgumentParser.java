@@ -45,7 +45,7 @@ public class ArgumentParser {
                 System.out.println("Invalid CLI arguments: Last argument should be --rate <rate_value>");
                 return null;
             }
-            argumentClass.setInputRate(Integer.valueOf(args.length-1));
+            argumentClass.setInputRate(Integer.valueOf(args[args.length-1]));
             System.out.println("Rate = " + argumentClass.getInputRate());
             Configurator.setRootLevel(Level.ERROR);
             return argumentClass;
