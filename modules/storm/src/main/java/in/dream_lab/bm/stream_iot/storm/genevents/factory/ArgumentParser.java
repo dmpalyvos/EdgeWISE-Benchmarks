@@ -1,6 +1,8 @@
 package in.dream_lab.bm.stream_iot.storm.genevents.factory;
 
 import java.net.InetAddress;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 
 /**
  * Created by tarun on 28/5/15.
@@ -19,6 +21,9 @@ public class ArgumentParser {
             System.out.println("invalid number of arguments");
             return null;
         }
+    	// L
+      // {topology_name} {dataset_filename} 1 1 {topology_output_dir}
+      // {query_properties} {topology_name} {stream_length} {num_workers} 1 {variant_args} {extra_args}"
         else {
             ArgumentClass argumentClass = new ArgumentClass();
             argumentClass.setDeploymentMode(args[0]);
@@ -41,6 +46,8 @@ public class ArgumentParser {
                 return null;
             }
             argumentClass.setInputRate(Integer.valueOf(args.length-1));
+            System.out.println("Rate = " + argumentClass.getInputRate());
+            Configurator.setRootLevel(Level.ERROR);
             return argumentClass;
         }
     }
