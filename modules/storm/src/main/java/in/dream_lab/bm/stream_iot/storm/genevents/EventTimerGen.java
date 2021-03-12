@@ -15,16 +15,13 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Semaphore;
-import com.esotericsoftware.minlog.Log;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.Config;
 
 public class EventTimerGen {
+
+	public static final int SOURCE_INITIAL_DELAY = 30000;
 	private final ISyntheticEventGen iseg;
 	private final double scalingFactor;
 	private final int rate;
@@ -72,7 +69,7 @@ public class EventTimerGen {
 			for (int i = 0; i < numThreads; i++) {
 				Timer timer = new Timer("EvenGen", true);
 				TimerTask task = new EvenGenTimerTask(nestedList.get(i), map, context);
-				timer.scheduleAtFixedRate(task, 0, period);
+				timer.scheduleAtFixedRate(task, SOURCE_INITIAL_DELAY, period);
 			}
 
 		} catch (IOException e) {
