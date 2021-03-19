@@ -20,6 +20,7 @@ public class ArgumentClass{
     List<Integer> boltInstances;
     int numWorkers;
     int bucket_time;
+    String statisticsFolder;
 
     public String getTasksName() {
 		return tasksName;
@@ -128,5 +129,13 @@ public class ArgumentClass{
 
     public List<Integer> getBoltInstances() {
     	return boltInstances;
+    }
+
+    public String getStatisticsFolder() {
+        return statisticsFolder;
+    }
+
+    public void setStatisticsFolder(String statisticsFolder) {
+        this.statisticsFolder = statisticsFolder;
     }
 }

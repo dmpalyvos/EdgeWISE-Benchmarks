@@ -4,6 +4,9 @@ package in.dream_lab.bm.stream_iot.storm.bolts.IoTStatsBolt;
 import in.dream_lab.bm.stream_iot.tasks.AbstractTask;
 import in.dream_lab.bm.stream_iot.tasks.io.MQTTPublishTask;
 import java.util.Vector;
+import metric_utils.AvgStat;
+import metric_utils.CountStat;
+import metric_utils.Stats;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
@@ -34,6 +37,9 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
 	long latencyCount = 0;
 	long sumLatencyValues = 0;
 	Vector<Long> latencies = new Vector();
+	private transient AvgStat latencyStat;
+	private transient AvgStat endLatencyStat;
+	private transient CountStat sinkThroughputStat;
 	// ######################################################## //
 
 
@@ -52,6 +58,10 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
         mqttpublishTask=new MQTTPublishTask();
         // mqttpublishTask.setup(l,p); // <-- disabled by Gabriele Mencagli
 
+			this.latencyStat = new AvgStat(Stats.statisticsFile(config, context, Stats.LATENCY_FILE));
+			this.endLatencyStat = new AvgStat(Stats.statisticsFile(config, context, Stats.END_LATENCY_FILE));
+			this.sinkThroughputStat = new CountStat(Stats.statisticsFile(config, context, Stats.SINK_THROUGHPUT_FILE));
+
         System.out.println("TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = " + config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 		Long builtinPeriod = (Long) config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
         reducedMetric= new ReducedMetric(new MeanReducer());
@@ -63,6 +73,7 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
+    	sinkThroughputStat.increase(1);
 
         String msgId = input.getStringByField("MSGID");
 
@@ -118,10 +129,13 @@ public class MQTTPublishTaskBolt extends BaseRichBolt {
     		Long spoutTimestamp = input.getLongByField("SPOUTTIMESTAMP");
     		long timestamp_ext = (long) input.getValueByField("TIMESTAMP_EXT");
     		if (spoutTimestamp > 0) {
-    			reducedMetric.update(System.currentTimeMillis() - spoutTimestamp);
-    			reducedMetricExt.update(System.currentTimeMillis() - timestamp_ext);
-    			// ############## added by Gabriele Mencagli ############## //
-    			long latency = System.currentTimeMillis() - spoutTimestamp.longValue();
+					// ############## added by Gabriele Mencagli ############## //
+					long latency = System.currentTimeMillis() - spoutTimestamp;
+					long latency_ext = System.currentTimeMillis() - timestamp_ext;
+					reducedMetric.update(latency);
+					latencyStat.add(latency);
+					reducedMetricExt.update(latency_ext);
+					endLatencyStat.add(latency_ext);
     			sumLatencyValues += latency;
     			latencyCount++;
     			latencies.addElement(new Long(latency));

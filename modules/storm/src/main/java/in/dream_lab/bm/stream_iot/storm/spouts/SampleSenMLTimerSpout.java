@@ -4,6 +4,8 @@ import in.dream_lab.bm.stream_iot.storm.genevents.EventTimerGen;
 import in.dream_lab.bm.stream_iot.storm.genevents.ISyntheticEventGen;
 import in.dream_lab.bm.stream_iot.storm.genevents.logging.BatchedFileLogging;
 import in.dream_lab.bm.stream_iot.storm.genevents.utils.GlobalConstants;
+import metric_utils.CountStat;
+import metric_utils.Stats;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -48,6 +50,8 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 	long generated = 0;
 	long start_time;
 	long last_time;
+	private transient CountStat throughputStat;
+
 	// ######################################################## //
 
 	public SampleSenMLTimerSpout() {
@@ -85,6 +89,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		if (entry == null || (this.msgId > this.startingMsgId + this.numEvents))
 			return;
 
+		throughputStat.increase(1);
 		Values values = new Values();
 		StringBuilder rowStringBuf = new StringBuilder();
 
@@ -185,6 +190,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		catch (Exception e) {
 			e.printStackTrace();
 		}
+		throughputStat = new CountStat(Stats.statisticsFile(map, context, Stats.SOURCE_THROUGHPUT_FILE));
 		_collector = collector;
 		this.eventGen = new EventTimerGen(this, this.scalingFactor, this.inputRate, map, context);
 		this.eventQueue = new LinkedBlockingQueue<List<String>>();
@@ -193,7 +199,7 @@ public class SampleSenMLTimerSpout extends BaseRichSpout implements ISyntheticEv
 		bptime = new BpTime();
 		// ba = new BatchedFileLogging(uLogfilename, context.getThisComponentId());
         Long builtinPeriod = (Long) map.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS);
-        context.registerMetric("external-queue-size", () -> eventQueue.size(), builtinPeriod.intValue());		
+        context.registerMetric("external-queue-size", () -> eventQueue.size(), builtinPeriod.intValue());
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import metric_utils.Stats;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -68,6 +69,9 @@ public class ETLTopology {
 		}
 		List<String> resourceFileProps = RiotResourceFileProps.getRiotResourceFileProps();
 		Config conf = new Config();
+
+		conf.put(Stats.STATS_FOLDER_KEY, argumentClass.getStatisticsFolder());
+
 		conf.put(Config.TOPOLOGY_BACKPRESSURE_ENABLE, true);
 		conf.setDebug(false);
 		conf.setNumAckers(0);

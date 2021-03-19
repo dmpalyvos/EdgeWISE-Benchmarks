@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import metric_utils.AvgStat;
+import metric_utils.CountStat;
+import metric_utils.Stats;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.MultiReducedMetric;
@@ -28,7 +31,10 @@ public class AzureTableInsertBolt  extends BaseRichBolt {
 	private transient ReducedMetric reducedMetricExt;
 	private int sampleCount = 0;
 	private int sampleRate;
-	
+  private transient AvgStat latencyStat;
+  private transient AvgStat endLatencyStat;
+  private transient CountStat sinkThroughputStat;
+
     private Properties p;
 
     public AzureTableInsertBolt(Properties p_)
@@ -48,6 +54,9 @@ public class AzureTableInsertBolt  extends BaseRichBolt {
 
         this.collector=outputCollector;
         initLogger(LoggerFactory.getLogger("APP"));
+        this.latencyStat = new AvgStat(Stats.statisticsFile(config, context, Stats.LATENCY_FILE));
+        this.endLatencyStat = new AvgStat(Stats.statisticsFile(config, context, Stats.END_LATENCY_FILE));
+        this.sinkThroughputStat = new CountStat(Stats.statisticsFile(config, context, Stats.SINK_THROUGHPUT_FILE));
 
         azureTableInsertTask= new AzureTableBatchInsert();
 
@@ -67,14 +76,16 @@ public class AzureTableInsertBolt  extends BaseRichBolt {
     @Override
     public void execute(Tuple input) 
     {
-    	String msgId = (String)input.getValueByField("MSGID");
-    	String meta = (String)input.getValueByField("META");
-    	String obsType = (String)input.getValueByField("OBSTYPE");
-    	String obsVal = (String)input.getValueByField("OBSVAL");
-    	String val = obsVal + "," + msgId;
-    	int count = tuplesMap.size();
-    	
-    	if(count == 0 )
+      sinkThroughputStat.increase(1);
+
+      String msgId = (String)input.getValueByField("MSGID");
+      String meta = (String)input.getValueByField("META");
+      String obsType = (String)input.getValueByField("OBSTYPE");
+      String obsVal = (String)input.getValueByField("OBSVAL");
+      String val = obsVal + "," + msgId;
+      int count = tuplesMap.size();
+
+      if(count == 0 )
     		batchFirstMsgId = msgId;
     	tuplesMap.put(String.valueOf(count), obsVal);
     	if(tuplesMap.size() >= insertBatchSize )
@@ -107,8 +118,12 @@ public class AzureTableInsertBolt  extends BaseRichBolt {
     		Long spoutTimestamp = input.getLongByField("SPOUTTIMESTAMP");
     		long timestamp_ext = (long) input.getValueByField("TIMESTAMP_EXT");
     		if (spoutTimestamp > 0) {
-    			reducedMetric.update(System.currentTimeMillis() - spoutTimestamp);
-    			reducedMetricExt.update(System.currentTimeMillis() - timestamp_ext);
+          long latency = System.currentTimeMillis() - spoutTimestamp;
+          long latency_ext = System.currentTimeMillis() - timestamp_ext;
+          reducedMetric.update(latency);
+          latencyStat.add(latency);
+          reducedMetricExt.update(latency_ext);
+          endLatencyStat.add(latency_ext);
     		}
     	}
     	

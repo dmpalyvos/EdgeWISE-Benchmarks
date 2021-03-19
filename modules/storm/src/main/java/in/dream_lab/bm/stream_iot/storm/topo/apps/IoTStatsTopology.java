@@ -12,6 +12,7 @@ import in.dream_lab.bm.stream_iot.storm.sinks.Sink;
 import in.dream_lab.bm.stream_iot.storm.spouts.SampleSenMLSpout;
 import in.dream_lab.bm.stream_iot.storm.spouts.SampleSenMLTimerSpout;
 import in.dream_lab.bm.stream_iot.storm.spouts.SampleSpout;
+import metric_utils.Stats;
 import vt.lee.lab.storm.riot_resources.RiotResourceFileProps;
 
 import org.apache.storm.Config;
@@ -66,7 +67,10 @@ public class IoTStatsTopology {
 		List<String> resourceFileProps = RiotResourceFileProps.getRiotResourceFileProps();
         
         Config conf = new Config();
-        conf.put(Config.TOPOLOGY_BACKPRESSURE_ENABLE, true);
+
+      conf.put(Stats.STATS_FOLDER_KEY, argumentClass.getStatisticsFolder());
+
+      conf.put(Config.TOPOLOGY_BACKPRESSURE_ENABLE, true);
 		conf.setDebug(false);
 		conf.setNumAckers(0);
 		conf.put(conf.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, argumentClass.getBucketTime());

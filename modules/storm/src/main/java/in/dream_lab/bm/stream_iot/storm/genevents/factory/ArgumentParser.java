@@ -17,7 +17,7 @@ public class ArgumentParser {
     public static ArgumentClass parserCLI(String [] args)
     {
 
-    	if(args == null || !(args.length == 13 || args.length == 14)){
+    	if(args == null || !(args.length == 15 || args.length == 16)){
             System.out.println("invalid number of arguments");
             return null;
         }
@@ -41,12 +41,18 @@ public class ArgumentParser {
                 argumentClass.setBoltInstances(args[11]);
             }
             // Command must always end with --rate <rate_value>
-            if (!"--rate".equals(args[args.length-2])) {
-                System.out.println("Invalid CLI arguments: Last argument should be --rate <rate_value>");
+            if (!"--rate".equals(args[args.length-4])) {
+                System.out.println("Invalid CLI arguments: Before-last argument should be --rate <rate_value>");
                 return null;
             }
-            argumentClass.setInputRate(Integer.valueOf(args[args.length-1]));
-            System.out.println("Rate = " + argumentClass.getInputRate());
+          argumentClass.setInputRate(Integer.valueOf(args[args.length-3]));
+          System.out.println("Rate = " + argumentClass.getInputRate());
+          if (!"--statisticsFolder".equals(args[args.length-2])) {
+              System.out.println("Invalid CLI arguments: Before-last argument should be --statisticsFolder <statistics_folder>");
+              return null;
+          }
+          argumentClass.setStatisticsFolder(args[args.length-1]);
+            System.out.println("Statistics Folder = " + argumentClass.getStatisticsFolder());
             Configurator.setRootLevel(Level.ERROR);
             return argumentClass;
         }
