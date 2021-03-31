@@ -1,9 +1,12 @@
-# ATC'19 EdgeWise Prototype - Benchmarks
+# ATC'19 EdgeWise Prototype - Benchmarks (Lachesis version)
+
 This repository contains the Benchmarks used by the EdgeWise Prototype for the [ATC'19](https://www.usenix.org/conference/atc19) paper:
 
 *Xinwei Fu, Talha Ghaffar, James C. Davis, Dongyoon Lee, "[EdgeWise: A Better Stream Processing Engine for the Edge](http://people.cs.vt.edu/fuxinwei/)", USENIX Annual Technical Conference (ATC), Renton, WA, USA, July 2019.*
 
-This repository modify the [riot-bench](https://github.com/dream-lab/riot-bench).
+with the modifications used in the evaluation of [Lachesis: A Standalone Stream-Aware OS Scheduling Framework](https://github.com/dmpalyvos/lachesis).
+
+This repository modifies the [riot-bench](https://github.com/dream-lab/riot-bench).
 
 ### Setup
 Download resources [here](https://drive.google.com/drive/folders/1DOrSu4r-Lzf1BE-5qRYdC-HRM9vjhmN4?usp=sharing).
